@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Logbook">
+<title>Logbook</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #0c0c0c;
+  --surface: #161616;
+  --surface2: #1e1e1e;
+  --border: #242424;
+  --accent: #c8ff00;
+  --text: #efefef;
+  --muted: #4a4a4a;
+  --muted2: #666;
+  --danger: #ff4444;
+  --success: #00e676;
+  --warn: #ffaa00;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100dvh; overflow-x: hidden; }
+
+header {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  padding: 14px 18px 11px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 3px; color: var(--accent); }
+.hdr-r { text-align: right; }
+.hdr-date { font-size: 12px; color: var(--muted2); }
+.hdr-streak { font-size: 11px; color: var(--accent); font-weight: 600; }
+
+nav {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--bg); position: sticky; top: 58px; z-index: 40;
+}
+nav button {
+  flex: 1; background: none; border: none; color: var(--muted2);
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+  padding: 11px 0; cursor: pointer; text-transform: uppercase; letter-spacing: .8px;
+  border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+}
+nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.view { display: none; padding: 14px 14px 110px; }
+.view.active { display: block; }
+
+/* OVERLOAD BANNER */
+.ob {
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;
+  display: flex; align-items: flex-start; gap: 9px; font-size: 13px;
+}
+.ob.up   { background: rgba(200,255,0,.09);  border: 1px solid rgba(200,255,0,.22); color: var(--accent); }
+.ob.ok   { background: rgba(0,230,118,.07);  border: 1px solid rgba(0,230,118,.2);  color: var(--success); }
+.ob.first{ background: rgba(255,170,0,.07);  border: 1px solid rgba(255,170,0,.2);  color: var(--warn); }
+.ob-ico  { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
+.ob strong { display: block; font-size: 13px; font-weight: 700; }
+.ob small  { font-size: 11px; opacity: .8; display: block; margin-top: 1px; }
+
+/* CARD */
+.ex-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; margin-bottom: 12px; overflow: hidden;
+}
+.ex-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 14px; cursor: pointer;
+}
+.ex-name { font-weight: 600; font-size: 15px; }
+.ex-sub  { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+.ex-hdr-r { display: flex; align-items: center; gap: 6px; }
+.ex-del  { background: none; border: none; color: var(--muted2); font-size: 16px; cursor: pointer; padding: 4px 6px; }
+.ex-chev { color: var(--muted2); font-size: 20px; transition: transform .2s; display: inline-block; }
+.ex-card.open .ex-chev { transform: rotate(90deg); }
+
+.sets-body { display: none; padding: 0 14px 14px; }
+.ex-card.open .sets-body { display: block; }
+
+.col-lbls {
+  display: grid; grid-template-columns: 24px 1fr 1fr 40px;
+  gap: 8px; padding: 2px 0 6px;
+}
+.col-lbl { font-size: 10px; color: var(--muted2); text-align: center; text-transform: uppercase; letter-spacing: .5px; }
+
+.set-row {
+  display: grid; grid-template-columns: 24px 1fr 1fr 40px;
+  gap: 8px; align-items: center; padding: 5px 0;
+  border-top: 1px solid var(--border);
+}
+.set-n { font-size: 11px; color: var(--muted2); text-align: center; font-weight: 500; }
+
+/* STEPPER */
+.stpr {
+  display: flex; align-items: center; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 9px; overflow: hidden; height: 40px;
+}
+.stpr-btn {
+  background: none; border: none; color: var(--text); font-size: 22px; font-weight: 300;
+  width: 36px; height: 40px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  user-select: none;
+}
+.stpr-btn:active { background: var(--surface2); }
+.stpr-in {
+  flex: 1; text-align: center; font-size: 15px; font-weight: 600;
+  color: var(--text); border: none; background: none; height: 40px; padding: 0;
+  width: 100%;
+}
+.stpr-in:focus { outline: none; color: var(--accent); }
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.prev-hint { font-size: 10px; color: var(--muted); text-align: center; margin-top: 2px; }
+
+.done-btn {
+  width: 34px; height: 34px; border-radius: 8px;
+  border: 2px solid var(--border); background: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; transition: all .12s; color: transparent; margin: 0 auto;
+}
+.done-btn.done { background: var(--accent); border-color: var(--accent); color: #000; }
+
+.add-set-row { display: flex; gap: 8px; margin-top: 10px; }
+.add-set-btn {
+  flex: 1; background: none; border: 1px dashed var(--border);
+  border-radius: 9px; color: var(--muted2);
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  padding: 9px; cursor: pointer; transition: all .15s;
+}
+.add-set-btn:active { border-color: var(--accent); color: var(--accent); }
+.del-set-btn {
+  flex: 0; background: none; border: 1px solid var(--border);
+  border-radius: 9px; color: var(--muted2);
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  padding: 9px 14px; cursor: pointer;
+}
+
+/* FAB */
+.fab-area {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 10px 14px 30px;
+  background: linear-gradient(to top, var(--bg) 60%, transparent);
+  display: flex; gap: 10px;
+}
+.fab {
+  flex: 1; border: none; border-radius: 12px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+  padding: 15px; cursor: pointer; transition: transform .1s;
+}
+.fab:active { transform: scale(.97); }
+.fab-p { background: var(--accent); color: #000; }
+.fab-s { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+/* MODAL */
+.modal-ov {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,.78); backdrop-filter: blur(6px);
+  align-items: flex-end;
+}
+.modal-ov.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  padding: 22px 16px 40px; width: 100%;
+  border-top: 1px solid var(--border); animation: slideUp .22s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal h3 { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1.5px; color: var(--accent); margin-bottom: 12px; }
+.modal input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 15px;
+  padding: 12px 14px; margin-bottom: 10px;
+}
+.modal input:focus { outline: none; border-color: var(--accent); }
+.quick-grid { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+.q-chip {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 6px 13px; font-size: 12px;
+  color: var(--text); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all .12s;
+}
+.q-chip.sel, .q-chip:active { background: var(--accent); color: #000; border-color: var(--accent); }
+.modal-btns { display: flex; gap: 8px; margin-top: 4px; }
+
+/* HISTORY */
+.h-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 10px; overflow: hidden;
+}
+.h-card-hdr {
+  padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer;
+}
+.h-card-date { font-weight: 600; font-size: 14px; }
+.h-card-meta { font-size: 11px; color: var(--muted2); }
+.h-card-body { display: none; padding: 10px 14px 14px; border-top: 1px solid var(--border); }
+.h-card.open .h-card-body { display: block; }
+.h-ex { margin-bottom: 10px; }
+.h-ex-name { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.h-set { font-size: 13px; color: var(--muted2); margin: 3px 0; display: flex; align-items: center; gap: 6px; }
+.h-set b { color: var(--text); }
+.pr-tag { background: var(--accent); color: #000; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 4px; letter-spacing: .5px; }
+.h-del-btn { margin-top: 8px; background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--muted2); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 6px 12px; cursor: pointer; }
+
+/* STATS */
+.stats-sel {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 14px; padding: 12px 14px; margin-bottom: 16px; appearance: none;
+}
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.stat-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.stat-lbl { font-size: 10px; color: var(--muted2); text-transform: uppercase; letter-spacing: .8px; }
+.stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 34px; color: var(--accent); line-height: 1.1; }
+.stat-sub { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+.prog-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.prog-ttl { font-size: 11px; color: var(--muted2); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px; }
+.prog-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-top: 1px solid var(--border); }
+.prog-date { font-size: 11px; color: var(--muted2); width: 76px; flex-shrink: 0; }
+.prog-bar-w { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.prog-bar { height: 100%; background: var(--accent); border-radius: 3px; }
+.prog-v { font-size: 12px; font-weight: 600; width: 52px; text-align: right; flex-shrink: 0; }
+
+.empty { text-align: center; padding: 50px 20px; color: var(--muted2); font-size: 14px; }
+.empty .ico { font-size: 36px; margin-bottom: 10px; }
+
+#toast {
+  position: fixed; bottom: 88px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--accent); color: #000; font-weight: 700; font-size: 13px;
+  padding: 10px 22px; border-radius: 22px; opacity: 0;
+  transition: all .25s; z-index: 300; pointer-events: none; white-space: nowrap;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>LOGBOOK</h1>
+  <div class="hdr-r">
+    <div class="hdr-date" id="hdrDate"></div>
+    <div class="hdr-streak" id="hdrStreak"></div>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="switchTab('session',this)">Session</button>
+  <button onclick="switchTab('history',this)">Historique</button>
+  <button onclick="switchTab('stats',this)">Stats</button>
+</nav>
+
+<div class="view active" id="view-session">
+  <div id="exList"></div>
+  <div class="fab-area">
+    <button class="fab fab-s" onclick="openModal()">+ Exercice</button>
+    <button class="fab fab-p" onclick="saveSession()">Sauvegarder ✓</button>
+  </div>
+</div>
+
+<div class="view" id="view-history">
+  <div id="historyList"></div>
+</div>
+
+<div class="view" id="view-stats">
+  <select class="stats-sel" id="statsSelect" onchange="renderStats()">
+    <option value="">Choisir un exercice…</option>
+  </select>
+  <div id="statsContent"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-ov" id="modalOv" onclick="maybeClose(event)">
+  <div class="modal">
+    <h3>Ajouter un exercice</h3>
+    <div class="quick-grid" id="quickGrid"></div>
+    <input type="text" id="exNameIn" placeholder="Ou saisir un nom…" autocomplete="off" list="exDatalist">
+    <datalist id="exDatalist"></datalist>
+    <input type="number" id="exSetsIn" placeholder="Nb de séries (défaut : 3)" inputmode="numeric" min="1" max="10">
+    <div class="modal-btns">
+      <button class="fab fab-s" style="padding:13px" onclick="closeModal()">Annuler</button>
+      <button class="fab fab-p" style="padding:13px" onclick="confirmAdd()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const W_STEP = 2.5, R_STEP = 1, TARGET_REPS = 12;
+const COMMON = ['Développé couché','Squat','Soulevé de terre','Tractions','Rowing barre','OHP','Curl biceps','Triceps poulie','Leg press','Fentes','Développé incliné','Pec deck'];
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let sessions = JSON.parse(localStorage.getItem('lb_v2') || '[]');
+let cur = null;
+
+function todayStr() { return new Date().toLocaleDateString('fr-FR'); }
+function norm(s) { return (s||'').trim().toLowerCase(); }
+
+function init() {
+  document.getElementById('hdrDate').textContent = todayStr();
+  updateStreak();
+  const existing = sessions.find(s => s.date === todayStr());
+  cur = existing ? JSON.parse(JSON.stringify(existing)) : { date: todayStr(), exercises: [] };
+  renderSession();
+  populateLists();
+}
+
+// ── OVERLOAD ────────────────────────────────────────────────────────────────
+function lastSessionForEx(name) {
+  for (const s of sessions) {
+    if (s.date === todayStr()) continue;
+    const ex = s.exercises.find(e => norm(e.name) === norm(name));
+    if (ex) return ex;
+  }
+  return null;
+}
+
+function advice(name) {
+  const last = lastSessionForEx(name);
+  if (!last) return { type: 'first', title: 'Premier enregistrement', detail: 'Note tes séries pour suivre ta progression !' };
+  const avgR = last.sets.reduce((a,s) => a+(s.reps||0), 0) / (last.sets.length||1);
+  const maxW  = Math.max(...last.sets.map(s => s.weight||0));
+  if (avgR >= TARGET_REPS) {
+    return { type: 'up', title: `↑ Augmente le poids · essaie ${maxW+W_STEP} kg`, detail: `Tu as tenu ${Math.round(avgR)} reps en moy. — c'est l'heure de charger !`, targetW: maxW+W_STEP, targetR: Math.round(avgR)-2 };
+  }
+  return { type: 'ok', title: `→ Même poids, vise ${Math.round(avgR)+1} reps`, detail: `Dernière fois : ${maxW} kg × ${Math.round(avgR)} reps`, targetW: maxW, targetR: Math.round(avgR)+1 };
+}
+
+// ── RENDER SESSION ───────────────────────────────────────────────────────────
+function renderSession() {
+  const el = document.getElementById('exList');
+  if (!cur.exercises.length) {
+    el.innerHTML = `<div class="empty"><div class="ico">💪</div>Ajoute ton premier exercice !</div>`;
+    return;
+  }
+  el.innerHTML = cur.exercises.map((ex, ei) => buildCard(ex, ei)).join('');
+}
+
+function buildCard(ex, ei) {
+  const adv = advice(ex.name);
+  const done = ex.sets.filter(s=>s.done).length;
+
+  const banner = `<div class="ob ${adv.type}">
+    <div class="ob-ico">${adv.type==='up'?'🔼':adv.type==='ok'?'✅':'🆕'}</div>
+    <div><strong>${adv.title}</strong><small>${adv.detail}</small></div>
+  </div>`;
+
+  const lastSets = lastSessionForEx(ex.name)?.sets || [];
+
+  const rows = ex.sets.map((s,si) => {
+    const prev = lastSets[si];
+    return `<div class="set-row" id="sr-${ei}-${si}">
+      <div class="set-n">${si+1}</div>
+      <div>
+        <div class="stpr">
+          <button class="stpr-btn" onclick="adj(${ei},${si},'w',-1)">−</button>
+          <input class="stpr-in" type="number" inputmode="decimal" value="${s.weight||0}"
+            onchange="setV(${ei},${si},'w',+this.value)" onfocus="this.select()">
+          <button class="stpr-btn" onclick="adj(${ei},${si},'w',+1)">+</button>
+        </div>
+        ${prev?`<div class="prev-hint">avant: ${prev.weight}kg</div>`:''}
+      </div>
+      <div>
+        <div class="stpr">
+          <button class="stpr-btn" onclick="adj(${ei},${si},'r',-1)">−</button>
+          <input class="stpr-in" type="number" inputmode="numeric" value="${s.reps||0}"
+            onchange="setV(${ei},${si},'r',+this.value)" onfocus="this.select()">
+          <button class="stpr-btn" onclick="adj(${ei},${si},'r',+1)">+</button>
+        </div>
+        ${prev?`<div class="prev-hint">avant: ${prev.reps}rep</div>`:''}
+      </div>
+      <button class="done-btn ${s.done?'done':''}" onclick="toggleDone(${ei},${si})">✓</button>
+    </div>`;
+  }).join('');
+
+  return `<div class="ex-card ${ex.open!==false?'open':''}" id="ec-${ei}">
+    <div class="ex-hdr" onclick="togEx(${ei})">
+      <div>
+        <div class="ex-name">${ex.name}</div>
+        <div class="ex-sub">${done}/${ex.sets.length} séries · ${bestStr(ex)}</div>
+      </div>
+      <div class="ex-hdr-r">
+        <button class="ex-del" onclick="event.stopPropagation();delEx(${ei})">✕</button>
+        <span class="ex-chev">›</span>
+      </div>
+    </div>
+    <div class="sets-body">
+      ${banner}
+      <div class="col-lbls">
+        <div class="col-lbl"></div>
+        <div class="col-lbl">Kg</div>
+        <div class="col-lbl">Reps</div>
+        <div class="col-lbl">✓</div>
+      </div>
+      ${rows}
+      <div class="add-set-row">
+        <button class="add-set-btn" onclick="addSet(${ei})">+ Série</button>
+        <button class="del-set-btn" onclick="delSet(${ei})">− Série</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bestStr(ex) {
+  const s = ex.sets.filter(s=>s.weight||s.reps);
+  if (!s.length) return '—';
+  const b = s.reduce((a,b)=>(a.weight*a.reps>b.weight*b.reps?a:b));
+  return `${b.weight||0} kg × ${b.reps||0} reps`;
+}
+
+// ── INTERACTIONS ────────────────────────────────────────────────────────────
+function togEx(ei) {
+  cur.exercises[ei].open = cur.exercises[ei].open === false;
+  document.getElementById(`ec-${ei}`).classList.toggle('open', !cur.exercises[ei].open || cur.exercises[ei].open === true);
+  // simpler:
+  const card = document.getElementById(`ec-${ei}`);
+  card.classList.toggle('open');
+  cur.exercises[ei].open = card.classList.contains('open');
+}
+
+function adj(ei, si, field, dir) {
+  const step = field==='w' ? W_STEP : R_STEP;
+  const key  = field==='w' ? 'weight' : 'reps';
+  const val  = Math.max(0, Math.round(((cur.exercises[ei].sets[si][key]||0) + dir*step)*10)/10);
+  cur.exercises[ei].sets[si][key] = val;
+  const row = document.getElementById(`sr-${ei}-${si}`);
+  row.querySelectorAll('.stpr-in')[field==='w'?0:1].value = val;
+  refreshSub(ei);
+}
+
+function setV(ei, si, field, val) {
+  cur.exercises[ei].sets[si][field==='w'?'weight':'reps'] = Math.max(0, val);
+  refreshSub(ei);
+}
+
+function refreshSub(ei) {
+  const ex = cur.exercises[ei];
+  const done = ex.sets.filter(s=>s.done).length;
+  document.querySelector(`#ec-${ei} .ex-sub`).textContent = `${done}/${ex.sets.length} séries · ${bestStr(ex)}`;
+}
+
+function toggleDone(ei, si) {
+  cur.exercises[ei].sets[si].done = !cur.exercises[ei].sets[si].done;
+  document.querySelector(`#sr-${ei}-${si} .done-btn`).classList.toggle('done', cur.exercises[ei].sets[si].done);
+  refreshSub(ei);
+  if (navigator.vibrate) navigator.vibrate(25);
+}
+
+function addSet(ei) {
+  const s = cur.exercises[ei].sets;
+  s.push(s.length ? {...s[s.length-1], done:false} : {weight:0,reps:0,done:false});
+  const open = document.getElementById(`ec-${ei}`).classList.contains('open');
+  renderSession();
+  if (open) document.getElementById(`ec-${ei}`)?.classList.add('open');
+}
+
+function delSet(ei) {
+  if (cur.exercises[ei].sets.length > 1) {
+    cur.exercises[ei].sets.pop();
+    const open = document.getElementById(`ec-${ei}`).classList.contains('open');
+    renderSession();
+    if (open) document.getElementById(`ec-${ei}`)?.classList.add('open');
+  }
+}
+
+function delEx(ei) {
+  cur.exercises.splice(ei,1);
+  renderSession();
+}
+
+// ── SAVE ────────────────────────────────────────────────────────────────────
+function saveSession() {
+  const idx = sessions.findIndex(s => s.date === cur.date);
+  const copy = JSON.parse(JSON.stringify(cur));
+  if (idx!==-1) sessions[idx]=copy; else sessions.unshift(copy);
+  localStorage.setItem('lb_v2', JSON.stringify(sessions));
+  populateLists(); updateStreak();
+  showToast('✓ Session sauvegardée');
+}
+
+// ── MODAL ───────────────────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('exNameIn').value='';
+  document.getElementById('exSetsIn').value='';
+  const used = new Set(cur.exercises.map(e=>norm(e.name)));
+  const hist = [...new Set(sessions.flatMap(s=>s.exercises.map(e=>e.name)))];
+  const chips = [...new Set([...hist,...COMMON])].filter(n=>!used.has(norm(n))).slice(0,12);
+  document.getElementById('quickGrid').innerHTML = chips.map(n =>
+    `<div class="q-chip" onclick="pickChip(this,'${n.replace(/'/g,"\\'")}')"> ${n}</div>`
+  ).join('');
+  document.getElementById('modalOv').classList.add('open');
+}
+
+function pickChip(el,name) {
+  document.querySelectorAll('.q-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('exNameIn').value=name;
+}
+
+function maybeClose(e) { if(e.target===document.getElementById('modalOv')) closeModal(); }
+function closeModal()  { document.getElementById('modalOv').classList.remove('open'); }
+
+function confirmAdd() {
+  const name = document.getElementById('exNameIn').value.trim();
+  if (!name) { document.getElementById('exNameIn').focus(); return; }
+  const n = parseInt(document.getElementById('exSetsIn').value)||3;
+  const adv = advice(name);
+  const last = lastSessionForEx(name)?.sets || [];
+  const sets = [];
+  for (let i=0;i<n;i++) {
+    let w=0, r=0;
+    if (adv.targetW!==undefined) { w=adv.targetW; r=adv.targetR||0; }
+    else if (last[i]) { w=last[i].weight; r=last[i].reps; }
+    sets.push({weight:w, reps:r, done:false});
+  }
+  cur.exercises.push({name, sets, open:true});
+  closeModal(); renderSession();
+}
+
+// ── HISTORY ─────────────────────────────────────────────────────────────────
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  if (!sessions.length) { el.innerHTML=`<div class="empty"><div class="ico">📋</div>Aucune session encore.</div>`; return; }
+  el.innerHTML = sessions.map((s,si)=>`
+    <div class="h-card" id="hc-${si}">
+      <div class="h-card-hdr" onclick="togHC(${si})">
+        <div class="h-card-date">${s.date}</div>
+        <div class="h-card-meta">${s.exercises.length} exercice${s.exercises.length>1?'s':''} · ${totVol(s)} kg vol.</div>
+      </div>
+      <div class="h-card-body">
+        ${s.exercises.map(ex=>`
+          <div class="h-ex">
+            <div class="h-ex-name">${ex.name}</div>
+            ${ex.sets.map((st,i)=>{
+              const pr=isPR(ex.name,st,s.date);
+              return `<div class="h-set"><b>${st.weight||0} kg × ${st.reps||0}</b>${pr?'<span class="pr-tag">PR</span>':''}</div>`;
+            }).join('')}
+          </div>`).join('')}
+        <button class="h-del-btn" onclick="delSess(${si})">Supprimer la session</button>
+      </div>
+    </div>`).join('');
+}
+
+function togHC(i) { document.getElementById(`hc-${i}`).classList.toggle('open'); }
+
+function delSess(i) {
+  sessions.splice(i,1);
+  localStorage.setItem('lb_v2', JSON.stringify(sessions));
+  renderHistory(); populateLists();
+}
+
+function totVol(s) {
+  return Math.round(s.exercises.reduce((a,ex)=>a+ex.sets.reduce((b,st)=>b+(st.weight||0)*(st.reps||0),0),0));
+}
+
+function isPR(name,set,date) {
+  const vol=(set.weight||0)*(set.reps||0);
+  if (!vol) return false;
+  for (const s of sessions) {
+    if (s.date===date) continue;
+    for (const ex of s.exercises) {
+      if (norm(ex.name)===norm(name)) {
+        for (const st of ex.sets) { if((st.weight||0)*(st.reps||0)>=vol) return false; }
+      }
+    }
+  }
+  return true;
+}
+
+// ── STATS ───────────────────────────────────────────────────────────────────
+function renderStats() {
+  const name=document.getElementById('statsSelect').value;
+  const cont=document.getElementById('statsContent');
+  if (!name) { cont.innerHTML=''; return; }
+  const entries=[];
+  for (const s of [...sessions].reverse()) {
+    const ex=s.exercises.find(e=>norm(e.name)===norm(name));
+    if (!ex) continue;
+    const maxW=Math.max(...ex.sets.map(s=>s.weight||0));
+    entries.push({date:s.date, maxW});
+  }
+  if (!entries.length) { cont.innerHTML=`<div class="empty" style="padding:30px 0">Aucune donnée.</div>`; return; }
+  const bestW=Math.max(...entries.map(e=>e.maxW));
+  const last=entries[entries.length-1], prev=entries[entries.length-2];
+  const delta=prev?last.maxW-prev.maxW:0;
+  cont.innerHTML=`
+    <div class="stat-grid">
+      <div class="stat-tile"><div class="stat-lbl">Record charge</div><div class="stat-val">${bestW}<small style="font-size:14px"> kg</small></div><div class="stat-sub">All time</div></div>
+      <div class="stat-tile"><div class="stat-lbl">Tendance</div><div class="stat-val" style="color:${delta>=0?'var(--success)':'var(--danger)'}">${delta>0?'+':''}${delta}<small style="font-size:14px"> kg</small></div><div class="stat-sub">vs session préc.</div></div>
+    </div>
+    <div class="prog-card">
+      <div class="prog-ttl">Progression charge max</div>
+      ${entries.map(e=>`
+        <div class="prog-row">
+          <div class="prog-date">${e.date}</div>
+          <div class="prog-bar-w"><div class="prog-bar" style="width:${bestW?e.maxW/bestW*100:0}%"></div></div>
+          <div class="prog-v">${e.maxW} kg</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── UTILS ───────────────────────────────────────────────────────────────────
+function populateLists() {
+  const names=[...new Set(sessions.flatMap(s=>s.exercises.map(e=>e.name)))];
+  document.getElementById('exDatalist').innerHTML=names.map(n=>`<option value="${n}">`).join('');
+  const sel=document.getElementById('statsSelect'), prev=sel.value;
+  sel.innerHTML='<option value="">Choisir un exercice…</option>'+names.map(n=>`<option ${n===prev?'selected':''} value="${n}">${n}</option>`).join('');
+}
+
+function updateStreak() {
+  const dates=sessions.map(s=>s.date).sort().reverse();
+  let streak=0, d=new Date();
+  for (const date of dates) {
+    if (date===d.toLocaleDateString('fr-FR')) { streak++; d.setDate(d.getDate()-1); }
+    else if (streak===0) { d.setDate(d.getDate()-1); if(date===d.toLocaleDateString('fr-FR')){streak++;d.setDate(d.getDate()-1);}else break; }
+    else break;
+  }
+  document.getElementById('hdrStreak').textContent=streak>1?`🔥 ${streak} jours`:'';
+}
+
+function switchTab(tab,btn) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+tab).classList.add('active');
+  btn.classList.add('active');
+  if (tab==='history') renderHistory();
+  if (tab==='stats') { populateLists(); renderStats(); }
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)';
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(16px)'; },2200);
+}
+
+init();
+</script>
+</body>
+</html>
